@@ -1,80 +1,74 @@
 package matrix
 
-//import ("fmt")
+type OriginEntity struct {
+	guid   string
+	degree int
+}
 
-func Create(content [][]string) map[string]map[string][]string {
-	table := make(map[string]map[string][]string)
-    for i := range content {
-    	record := content[i]
-		if _, ok := table[record[0]]; !ok {
-			table[record[0]] = make(map[string][]string)
+func Create(content [][]string) map[string]map[string]*[]string {
+	table := make(map[string]map[string]*[]string)
+	for i := range content {
+		from := content[i][0]
+		to := content[i][1]
+		edge := content[i][2]
+
+		if _, ok := table[from]; !ok {
+			table[from] = make(map[string]*[]string)
 		}
-		if _, ok := table[record[0]][record[1]]; !ok {
-			table[record[0]][record[1]] = []string{}
+		var p *[]string
+		var ok bool
+		if p, ok = table[from][to]; !ok {
+			p = &[]string{}
+			table[from][to] = p
+
+			if _, ok := table[to]; !ok {
+				table[to] = make(map[string]*[]string)
+			}
+			table[to][from] = p
 		}
-		table[record[0]][record[1]] = append(table[record[0]][record[1]], record[2])
+		*p = append(*p, edge)
 	}
 	return table
 }
 
-func CreateGraph(mapContent map[string]map[string][]string, guid string) map[string]map[string][]string {
-	results := map[string]map[string][]string {
-		guid: mapContent[guid],
-	}
-	for k1, _ := range mapContent {
-		if val, ok := mapContent[k1][guid]; ok{
-			results[k1] = map[string][]string {
-				guid: val,
-			}
-		}
-	}
-	return results
-}
+func CreateGraph(content map[string]map[string]*[]string, degree int, guid string) []string {
+	edges := []string{}
+	queue := make([]OriginEntity, 0)
+	inQueue := make(map[string]bool)
+	visited := make(map[string]bool)
+	lastDegreeNodes := make(map[string]bool)
+	queue = append(queue, OriginEntity{guid: guid, degree: 0})
+	for len(queue) > 0 {
+		elem := queue[0]
+		queue = queue[1:]
+		visited[elem.guid] = true
+		nextDegree := elem.degree + 1
 
-func CreateCompleteGraph(content map[string]map[string][]string, guid string) map[string]map[string][]string {
-	degree1 := CreateGraph(content, guid)
-	var originGuids = make(map[string]bool)
-	for k1, _ := range degree1 {
-		if _, ok := degree1[k1]; ok{
-			originGuids[k1] = true
-		}
-		for k2, _ := range degree1[k1] {
-			if _, ok := degree1[k1][k2]; ok{
-				originGuids[k2] = true
-			}
-		}
-	}
-	var childs = make(map[string]map[string][]string)
-	for k3, _ := range originGuids {
-		results := CreateGraph(content, k3)
-		for k4, _ := range results {
-			if _, ok := originGuids[k4]; ok {
-				if _, ok := childs[k4]; !ok {
-					childs[k4] = make(map[string][]string)
-				}
-				for k5, _ := range results[k4] {
-					if _, ok := originGuids[k5]; ok {
-						if _, ok := childs[k4][k5]; !ok {
-							childs[k4][k5] = []string{}
-						}
-						elems := []string{}
-						for i := 0; i < len(results[k4][k5]); i++{
-							isDuplicate := false
-							for j := 0; j < len(childs[k4][k5]); j++{
-								if results[k4][k5][i] == childs[k4][k5][j] {
-									isDuplicate = true
-									break
-								}
-							}
-							if !isDuplicate {
-								elems = append(elems, results[k4][k5][i])
-							}
-						}
-						childs[k4][k5] = append(childs[k4][k5], elems...)
+		for k, _ := range content[elem.guid] {
+			if _, ok := visited[k]; !ok {
+				edges = append(edges, *content[elem.guid][k]...)
+				if _, ok := inQueue[k]; !ok {
+					if nextDegree == degree {
+						lastDegreeNodes[k] = true
+					} else {
+						queue = append(queue, OriginEntity{guid: k, degree: nextDegree})
+						inQueue[k] = true
 					}
 				}
 			}
 		}
 	}
-	return childs;
+	tmpLastDegreeNodes := make([]string, 0, len(lastDegreeNodes))
+	for k, _ := range lastDegreeNodes {
+		tmpLastDegreeNodes = append(tmpLastDegreeNodes, k)
+	}
+	for _, v := range tmpLastDegreeNodes {
+		for k, _ := range content[v] {
+			if _, ok := lastDegreeNodes[k]; ok {
+				edges = append(edges, *content[v][k]...)
+			}
+		}
+		delete(lastDegreeNodes, v)
+	}
+	return edges
 }
