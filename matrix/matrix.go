@@ -1,8 +1,14 @@
 package matrix
 
-type OriginEntity struct {
+type Node struct {
 	guid   string
 	degree int
+	edges  []Edge
+}
+
+type Edge struct {
+	guid string
+	to   Node
 }
 
 func Create(content [][]string) map[string]map[string]*[]string {
@@ -33,11 +39,11 @@ func Create(content [][]string) map[string]map[string]*[]string {
 
 func CreateGraph(content map[string]map[string]*[]string, degree int, guid string) []string {
 	edges := []string{}
-	queue := make([]OriginEntity, 0)
+	queue := make([]Node, 0)
 	inQueue := make(map[string]bool)
 	visited := make(map[string]bool)
 	lastDegreeNodes := make(map[string]bool)
-	queue = append(queue, OriginEntity{guid: guid, degree: 0})
+	queue = append(queue, Node{guid: guid, degree: 0})
 	for len(queue) > 0 {
 		elem := queue[0]
 		queue = queue[1:]
@@ -51,7 +57,7 @@ func CreateGraph(content map[string]map[string]*[]string, degree int, guid strin
 					if nextDegree == degree {
 						lastDegreeNodes[k] = true
 					} else {
-						queue = append(queue, OriginEntity{guid: k, degree: nextDegree})
+						queue = append(queue, Node{guid: k, degree: nextDegree})
 						inQueue[k] = true
 					}
 				}
