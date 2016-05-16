@@ -3,11 +3,11 @@ package matrix
 type Node struct {
 	guid   string
 	degree int
-	edges  []Edge
 }
 
 type Edge struct {
 	guid string
+	from Node
 	to   Node
 }
 
@@ -37,13 +37,15 @@ func Create(content [][]string) map[string]map[string]*[]string {
 	return table
 }
 
-func CreateGraph(content map[string]map[string]*[]string, degree int, guid string) []string {
-	edges := []string{}
+func CreateGraph(content map[string]map[string]*[]string, degree int, guid string) []Edge {
+	nodes := make(map[string]Node)
+	edges := []Edge{}
 	queue := make([]Node, 0)
 	inQueue := make(map[string]bool)
 	visited := make(map[string]bool)
 	lastDegreeNodes := make(map[string]bool)
-	queue = append(queue, Node{guid: guid, degree: 0})
+	nodes[guid] = Node{guid: guid, degree: 0}
+	queue = append(queue, nodes[guid])
 	for len(queue) > 0 {
 		elem := queue[0]
 		queue = queue[1:]
@@ -51,30 +53,39 @@ func CreateGraph(content map[string]map[string]*[]string, degree int, guid strin
 		nextDegree := elem.degree + 1
 
 		for k, _ := range content[elem.guid] {
+			if _, ok := nodes[k]; !ok {
+				nodes[k] = Node{guid: k}
+			}
 			if _, ok := visited[k]; !ok {
-				edges = append(edges, *content[elem.guid][k]...)
+				for i := range *content[elem.guid][k] {
+					edges = append(edges, Edge{guid: (*content[elem.guid][k])[i], from: nodes[elem.guid], to: nodes[k]})
+				}
 				if _, ok := inQueue[k]; !ok {
 					if nextDegree == degree {
 						lastDegreeNodes[k] = true
 					} else {
-						queue = append(queue, Node{guid: k, degree: nextDegree})
+						node := nodes[k]
+						node.degree = nextDegree
+						queue = append(queue, node)
 						inQueue[k] = true
 					}
 				}
 			}
 		}
 	}
-	tmpLastDegreeNodes := make([]string, 0, len(lastDegreeNodes))
-	for k, _ := range lastDegreeNodes {
-		tmpLastDegreeNodes = append(tmpLastDegreeNodes, k)
-	}
-	for _, v := range tmpLastDegreeNodes {
-		for k, _ := range content[v] {
+	tmpLastDegreeNodes := lastDegreeNodes
+	for keyLastNode, _ := range tmpLastDegreeNodes {
+		for k, _ := range content[keyLastNode] {
+			if _, ok := nodes[k]; !ok {
+				nodes[k] = Node{guid: k}
+			}
 			if _, ok := lastDegreeNodes[k]; ok {
-				edges = append(edges, *content[v][k]...)
+				for i := range *content[keyLastNode][k] {
+					edges = append(edges, Edge{guid: (*content[keyLastNode][k])[i], from: nodes[keyLastNode], to: nodes[k]})
+				}
 			}
 		}
-		delete(lastDegreeNodes, v)
+		delete(lastDegreeNodes, keyLastNode)
 	}
 	return edges
 }
