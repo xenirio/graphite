@@ -1,5 +1,7 @@
 package matrix
 
+import "fmt"
+
 type Node struct {
 	Guid   string
 	Degree int
@@ -37,7 +39,7 @@ func Create(content [][]string) map[string]map[string]*[]string {
 	return table
 }
 
-func CreateGraph(content map[string]map[string]*[]string, degree int, guid string) ([]Edge, map[string]Node) {
+func CreateSimpleGraph(content map[string]map[string]*[]string, degree int, guid string) ([]Edge, map[string]Node) {
 	nodes := make(map[string]Node)
 	edges := []Edge{}
 	queue := make([]Node, 0)
@@ -90,4 +92,50 @@ func FindInterconnectedEdges(content map[string]map[string]*[]string, nodes map[
 		delete(nodes, keyLastNode)
 	}
 	return edges
+}
+
+func CreateInterconnectionGraph(content map[string]map[string]*[]string, degree int, guids map[string]bool) map[string]bool {
+	queue := make([]Node, 0)
+	for k, _ := range guids {
+		queue = append(queue, Node{Guid: k, Degree: 0})
+	}
+	inQueue := make(map[string]bool)
+	edges := make(map[string][]string)
+	visited := make(map[string]bool)
+	for len(queue) > 0 {
+		elem := queue[0]
+		queue = queue[1:]
+		nextDegree := elem.Degree + 1
+
+		for k, _ := range content[elem.Guid] {
+			if _, ok := visited[k]; !ok {
+				if _, ok := edges[k]; !ok {
+					edges[k] = []string{}
+				}
+				edges[k] = append(edges[k], (*content[elem.Guid][k])...)
+				if _, ok := inQueue[k]; !ok {
+					if nextDegree < degree-1 {
+						queue = append(queue, Node{Guid: k, Degree: nextDegree})
+						inQueue[k] = true
+					}
+				}
+			}
+		}
+		visited[elem.Guid] = true
+	}
+	fmt.Println(edges)
+	results := make(map[string]bool)
+	for k, _ := range edges {
+		/*if _, ok := guids[k]; ok {
+			for _, v := range edges[k] {
+				results[v] = true
+			}
+		}*/
+		if len(edges[k]) > 1 {
+			for _, v := range edges[k] {
+				results[v] = true
+			}
+		}
+	}
+	return results
 }
