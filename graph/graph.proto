@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package graph;
+
+service Graph {
+    rpc CreateGraph(Origin) returns (stream Edge) {}
+}
+
+message Origin {
+    int32 degree = 1;
+    string guid = 2;
+}
+
+message Edge {
+    string guid = 1;
+    string from = 2;
+    string to = 3;
+}

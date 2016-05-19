@@ -1,8 +1,9 @@
 <component name="libraryTable">
   <library name="GOPATH &lt;graphite&gt;">
     <CLASSES>
-      <root url="file://$PROJECT_DIR$/../.." />
       <root url="file://$PROJECT_DIR$/../../../golang.org" />
+      <root url="file://$PROJECT_DIR$/../../../google.golang.org" />
+      <root url="file://$PROJECT_DIR$/../.." />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
