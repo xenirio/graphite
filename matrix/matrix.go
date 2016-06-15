@@ -1,16 +1,19 @@
 package matrix
 
+// Node Type
 type Node struct {
 	Guid   string
 	Degree int
 }
 
+// Edge Type
 type Edge struct {
 	Guid string
 	From Node
 	To   Node
 }
 
+// Create Create Relationship Matrix
 func Create(content [][]string) map[string]map[string]*[]string {
 	table := make(map[string]map[string]*[]string)
 	for i := range content {
@@ -37,6 +40,7 @@ func Create(content [][]string) map[string]map[string]*[]string {
 	return table
 }
 
+// CreateSimpleGraph Create Simple Graph Map
 func CreateSimpleGraph(content map[string]map[string]*[]string, degree int, guid string) ([]Edge, map[string]Node) {
 	nodes := make(map[string]Node)
 	edges := []Edge{}
@@ -52,7 +56,7 @@ func CreateSimpleGraph(content map[string]map[string]*[]string, degree int, guid
 		visited[elem.Guid] = true
 		nextDegree := elem.Degree + 1
 
-		for k, _ := range content[elem.Guid] {
+		for k := range content[elem.Guid] {
 			if _, ok := nodes[k]; !ok {
 				nodes[k] = Node{Guid: k}
 			}
@@ -76,11 +80,12 @@ func CreateSimpleGraph(content map[string]map[string]*[]string, degree int, guid
 	return edges, lastDegreeNodes
 }
 
+// FindInterconnectedEdges to find interconnection edge
 func FindInterconnectedEdges(content map[string]map[string]*[]string, nodes map[string]Node) []Edge {
 	edges := []Edge{}
 	tmpNodes := nodes
-	for keyLastNode, _ := range tmpNodes {
-		for k, _ := range content[keyLastNode] {
+	for keyLastNode := range tmpNodes {
+		for k := range content[keyLastNode] {
 			if _, ok := nodes[k]; ok {
 				for i := range *content[keyLastNode][k] {
 					edges = append(edges, Edge{Guid: (*content[keyLastNode][k])[i], From: nodes[keyLastNode], To: nodes[k]})
@@ -92,47 +97,58 @@ func FindInterconnectedEdges(content map[string]map[string]*[]string, nodes map[
 	return edges
 }
 
+// CreateInterconnectionGraph to create interconnection Graph
 func CreateInterconnectionGraph(content map[string]map[string]*[]string, degree int, guids map[string]bool) map[string]bool {
-	queue := make([]Node, 0)
-	for k, _ := range guids {
-		queue = append(queue, Node{Guid: k, Degree: 0})
-	}
-	inQueue := make(map[string]bool)
-	edges := make(map[string][]string)
-	visited := make(map[string]bool)
-	for len(queue) > 0 {
-		elem := queue[0]
-		queue = queue[1:]
-		nextDegree := elem.Degree + 1
+	selectedNodes := make(map[string]bool)
 
-		for k, _ := range content[elem.Guid] {
-			if _, ok := visited[k]; !ok {
-				if _, ok := edges[k]; !ok {
-					edges[k] = []string{}
-				}
-				edges[k] = append(edges[k], (*content[elem.Guid][k])...)
-				if _, ok := inQueue[k]; !ok {
-					if nextDegree < degree-1 {
-						queue = append(queue, Node{Guid: k, Degree: nextDegree})
-						inQueue[k] = true
-					}
-				}
-			}
-		}
-		visited[elem.Guid] = true
+	for startNode := range guids {
+		guids[startNode] = false
+		findPath(content, make(map[string]bool), selectedNodes, startNode, guids, degree, 0)
+		guids[startNode] = true
 	}
-	results := make(map[string]bool)
-	for k, _ := range edges {
-		if _, ok := guids[k]; ok {
-			for _, v := range edges[k] {
-				results[v] = true
-			}
-		}
-		if len(edges[k]) > 1 {
-			for _, v := range edges[k] {
-				results[v] = true
+
+	selectedRelationships := make(map[string]bool)
+	var listNode []string
+
+	for startNode := range selectedNodes {
+		listNode = append(listNode, startNode)
+	}
+
+	for i := 0; i < len(listNode)-1; i++ {
+		for j := i + 1; j < len(listNode); j++ {
+			if _, ok := content[listNode[i]][listNode[j]]; ok {
+				for _, rel := range *content[listNode[i]][listNode[j]] {
+					selectedRelationships[rel] = true
+				}
 			}
 		}
 	}
-	return results
+
+	return selectedRelationships
+}
+
+func findPath(content map[string]map[string]*[]string, visited map[string]bool, answer map[string]bool, current string, targets map[string]bool, maxDegree int, currentDegree int) {
+	visited[current] = true
+	if currentDegree == maxDegree {
+		isTarget, exist := targets[current]
+		if exist && isTarget {
+			for k := range visited {
+				answer[k] = true
+			}
+		}
+	} else {
+		isTarget, exist := targets[current]
+		if exist && isTarget {
+			for k := range visited {
+				answer[k] = true
+			}
+		} else {
+			for neighbor := range content[current] {
+				if _, ok := visited[neighbor]; !ok {
+					findPath(content, visited, answer, neighbor, targets, maxDegree, currentDegree+1)
+				}
+			}
+		}
+	}
+	delete(visited, current)
 }
