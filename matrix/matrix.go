@@ -1,7 +1,5 @@
 package matrix
 
-import "fmt"
-
 type Node struct {
 	Guid   string
 	Degree int
@@ -123,14 +121,13 @@ func CreateInterconnectionGraph(content map[string]map[string]*[]string, degree 
 		}
 		visited[elem.Guid] = true
 	}
-	fmt.Println(edges)
 	results := make(map[string]bool)
 	for k, _ := range edges {
-		/*if _, ok := guids[k]; ok {
+		if _, ok := guids[k]; ok {
 			for _, v := range edges[k] {
 				results[v] = true
 			}
-		}*/
+		}
 		if len(edges[k]) > 1 {
 			for _, v := range edges[k] {
 				results[v] = true

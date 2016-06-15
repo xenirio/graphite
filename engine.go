@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	f, _ := os.Open("D:\\Projects\\Golang\\src\\github.com\\xenirio\\graphite\\sample\\relationships.csv")
+	f, _ := os.Open("D:\\Projects\\Golang\\src\\github.com\\xenirio\\graphite\\sample\\sample_relationships.csv")
 	r := csv.NewReader(bufio.NewReader(f))
 	result, _ := r.ReadAll()
 	relationMap := matrix.Create(result)
